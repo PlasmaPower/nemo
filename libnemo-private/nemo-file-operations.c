@@ -1907,6 +1907,28 @@ trash_files (CommonJob *job, GList *files, int *files_skipped)
 	total_files = g_list_length (files);
 	files_trashed = 0;
 
+	char* prompt;
+	if (total_files == 1) {
+		prompt = f (_("Are you sure you want to move \"%B\" to the trash?"), 
+			    files->data);
+	} else {
+		prompt = f (ngettext("Are you sure you want to move "
+				     "the %'d selected items to the trash?",
+				     "Are you sure you want to move "
+				     "the %'d selected items to the trash?", total_files),
+			    total_files);
+	}
+	int trash_response = run_warning (job, 
+				    prompt,
+				    f (_("If you move an item to the trash, it will not be permanently lost.")),
+				    NULL,
+				    FALSE,
+				    GTK_STOCK_CANCEL, GTK_STOCK_DELETE,
+				    NULL);
+	if (trash_response != 1) {
+		return;
+	}
+
 	report_trash_progress (job, files_trashed, total_files);
 
 	to_delete = NULL;
@@ -2067,8 +2089,28 @@ delete_job (GIOSchedulerJob *io_job,
 	
 	if (to_trash_files != NULL) {
 		to_trash_files = g_list_reverse (to_trash_files);
-		
-		trash_files (common, to_trash_files, &files_skipped);
+		int file_count = g_list_length (to_trash_files);
+		char* prompt;
+		if (file_count == 1) {
+			prompt = f (_("Are you sure you want to move \"%B\" to the trash?"), 
+				    to_trash_files->data);
+		} else {
+			prompt = f (ngettext("Are you sure you want to move "
+					     "the %'d selected items to the trash?",
+					     "Are you sure you want to move "
+					     "the %'d selected items to the trash?", file_count),
+				    file_count);
+		}
+		int response = run_warning (job, 
+					    prompt,
+					    f (_("If you move an item to the trash, it will not be permanently lost.")),
+					    NULL,
+					    FALSE,
+					    GTK_STOCK_CANCEL, GTK_STOCK_DELETE,
+					    NULL);
+		if (response == 1) {
+			trash_files (common, to_trash_files, &files_skipped);
+		}
 	}
 	
 	g_list_free (to_trash_files);
